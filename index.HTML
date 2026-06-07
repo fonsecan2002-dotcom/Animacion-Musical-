@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Visualizador Musical</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    #audioFile {
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      background: rgba(255,255,255,0.08);
+      color: rgba(255,255,255,0.7);
+      border: 1px solid rgba(255,255,255,0.2);
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      cursor: pointer;
+      backdrop-filter: blur(8px);
+    }
+
+    #controls {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.15);
+      padding: 10px 20px;
+      border-radius: 40px;
+      backdrop-filter: blur(12px);
+      white-space: nowrap;
+    }
+
+    #btnPlay {
+      background: none;
+      border: none;
+      color: white;
+      font-size: 1.1rem;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    #timeDisplay {
+      font-size: 0.7rem;
+      color: rgba(255,255,255,0.6);
+      letter-spacing: 0.05em;
+      min-width: 90px;
+      text-align: center;
+      font-family: monospace;
+    }
+
+    #seekBar {
+      width: 220px;
+      accent-color: rgba(200,210,255,0.8);
+      cursor: pointer;
+    }
+
+    #volIcon {
+      font-size: 0.9rem;
+      cursor: pointer;
+    }
+
+    #volBar {
+      width: 70px;
+      accent-color: rgba(200,210,255,0.8);
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <input type="file" id="audioFile" accept="audio/*" />
+  <audio id="audio"></audio>
+  <canvas id="canvas"></canvas>
+
+  <div id="controls">
+    <button id="btnPlay">▶</button>
+    <span id="timeDisplay">0:00 / 0:00</span>
+    <input type="range" id="seekBar" value="0" min="0" step="0.1" />
+    <span id="volIcon">🔊</span>
+    <input type="range" id="volBar" value="1" min="0" max="1" step="0.01" />
+  </div>
+
+  <script src="sketch.js"></script>
+</body>
+</html>
