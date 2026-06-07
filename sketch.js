@@ -47,6 +47,24 @@ for (let i = 0; i < 600; i++) {
     });
 }
 
+// ── Partículas ──
+const particles = [];
+const PARTICLE_COUNT = 120;
+
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+    particles.push({
+        x:      Math.random() * canvas.width,
+        y:      Math.random() * canvas.height,
+        baseX:  Math.random() * canvas.width,
+        baseY:  Math.random() * canvas.height,
+        size:   Math.random() * 3 + 1,
+        color:  starColors[Math.floor(Math.random() * starColors.length)],
+        phase:  Math.random() * Math.PI * 2,
+        speed:  Math.random() * 0.04 + 0.02,
+        orbitR: Math.random() * 40 + 10,
+    });
+}
+
 // ── Estado global del audio ──
 let audioContext = null;
 let analyser     = null;
@@ -60,7 +78,6 @@ audioFile.addEventListener("change", function (e) {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Crear contexto solo una vez
     if (!audioContext) {
         audioContext = new AudioContext();
     }
@@ -80,12 +97,6 @@ audioFile.addEventListener("change", function (e) {
     dataArray    = new Uint8Array(bufferLength);
 
     audio.play().catch(err => console.error("Error play:", err));
-
-    // Arrancar el loop solo la primera vez
-    if (!animating) {
-        animating = true;
-        animate();
-    }
 });
 
 // ── Anillo ──
@@ -168,10 +179,12 @@ function animate() {
 
     requestAnimationFrame(animate);
 
-    // Si aún no hay analyser listo, solo dibujar fondo y estrellas
+    // Sin audio: solo fondo, estrellas y partículas suaves
     if (!analyser || !dataArray) {
+
         ctx.fillStyle = "rgba(5,0,18,0.18)";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         for (const star of stars) {
             star.twinkle += star.speed;
             const alpha = 0.35 + 0.55 * Math.abs(Math.sin(star.twinkle));
@@ -182,6 +195,28 @@ function animate() {
             ctx.shadowColor = `rgba(${star.color}, 0.8)`;
             ctx.fill();
         }
+
+        for (const p of particles) {
+            p.phase += p.speed;
+            const dx   = mouseX - p.x;
+            const dy   = mouseY - p.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 160) {
+                p.x += dx * 0.04;
+                p.y += dy * 0.04;
+            } else {
+                p.x += (p.baseX + Math.cos(p.phase) * p.orbitR - p.x) * 0.03;
+                p.y += (p.baseY + Math.sin(p.phase) * p.orbitR - p.y) * 0.03;
+            }
+            const alpha = 0.2 + 0.3 * Math.abs(Math.sin(p.phase));
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fillStyle   = `rgba(${p.color}, ${alpha})`;
+            ctx.shadowBlur  = 4;
+            ctx.shadowColor = `rgba(${p.color}, 0.6)`;
+            ctx.fill();
+        }
+
         ctx.shadowBlur = 0;
         return;
     }
@@ -232,7 +267,36 @@ function animate() {
     ctx.shadowBlur = 0;
 
     const average = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+    const energy  = average / 255;
 
+    // Partículas con música
+    for (const p of particles) {
+        p.phase += p.speed;
+        const dx   = mouseX - p.x;
+        const dy   = mouseY - p.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 160) {
+            p.x += dx * 0.04;
+            p.y += dy * 0.04;
+        } else {
+            const pulse = 1 + energy * 3;
+            p.x += (p.baseX + Math.cos(p.phase) * p.orbitR * pulse - p.x) * 0.03;
+            p.y += (p.baseY + Math.sin(p.phase) * p.orbitR * pulse - p.y) * 0.03;
+        }
+        const brightness = 0.3 + energy * 2.5 * Math.abs(Math.sin(p.phase * 2));
+        const alpha      = Math.min(1, brightness);
+        const glow       = 4 + energy * 20;
+        const size       = p.size + energy * 4;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, size, 0, Math.PI * 2);
+        ctx.fillStyle   = `rgba(${p.color}, ${alpha})`;
+        ctx.shadowBlur  = glow;
+        ctx.shadowColor = `rgba(${p.color}, 0.9)`;
+        ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+
+    // Anillos
     ctx.globalAlpha = 1;
     ctx.lineWidth   = 4;
     drawGalaxyRing(260, 2, average);
@@ -248,7 +312,7 @@ function animate() {
     ctx.globalAlpha = 1;
 }
 
-// Arrancar el loop desde el inicio (estrellas visibles antes de cargar música)
+// Arrancar loop desde el inicio
 animating = true;
 animate();
 
